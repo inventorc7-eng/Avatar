@@ -1,17 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
     <title>Avatar 3D</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <style>
-        body { margin: 0; background: #000; overflow: hidden; }
-        #status { position: absolute; top: 50%; width: 100%; text-align: center; color: #fff; font-family: sans-serif; }
-    </style>
+    <style>body { margin: 0; background: #000; }</style>
 </head>
 <body>
-    <div id="status">محاولة أخيرة للتحميل...</div>
+    <div id="status" style="color:white; text-align:center; margin-top:20%;">جاري التحميل...</div>
     <script>
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -22,25 +18,18 @@
         camera.position.z = 5;
 
         const loader = new THREE.GLTFLoader();
-        
-        // هيجرب يقرأ الملف من المسار الحالي، ومن الفولدر، ومن بره الفولدر
-        const file = 'model_1774875797409.glb';
-        const paths = [file, './' + file, '/Avatar/' + file, '../' + file];
+        // الرابط المباشر لملفك
+        const url = 'https://raw.githubusercontent.com/inventorc7-eng/Avatar/main/model_1774875797409.glb';
 
-        function loadPath(i) {
-            if (i >= paths.length) {
-                document.getElementById('status').innerText = "جيت هاب مش شايف الملف.. جرب تفتح اللينك في متصفح خفي";
-                return;
-            }
-            loader.load(paths[i], (gltf) => {
-                scene.add(gltf.scene);
-                document.getElementById('status').style.display = 'none';
-                animate();
-            }, undefined, () => loadPath(i + 1));
-        }
+        loader.load(url, (gltf) => {
+            scene.add(gltf.scene);
+            document.getElementById('status').style.display = 'none';
+        }, undefined, (e) => {
+            document.getElementById('status').innerText = "خطأ: جيت هاب لسه مش شايف الملف";
+        });
 
-        loadPath(0);
-        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
+        function animate() { requestAnimationFrame(animate); scene.rotation.y += 0.01; renderer.render(scene, camera); }
+        animate();
     </script>
 </body>
 </html>
