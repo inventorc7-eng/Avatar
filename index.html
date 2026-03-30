@@ -2,48 +2,46 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Avatar 3D Final</title>
+    <title>Aang 3D - Live</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <style>body { margin: 0; background: #000; overflow: hidden; }</style>
+    <style>body { margin: 0; background: #111; overflow: hidden; }</style>
 </head>
 <body>
-    <div id="msg" style="color:white; text-align:center; padding-top:20%; font-family:sans-serif;">جاري البحث عن الملف...</div>
     <script>
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        // تفعيل الألوان الحقيقية للمجسم
+        renderer.outputEncoding = THREE.sRGBEncoding;
         document.body.appendChild(renderer.domElement);
-        scene.add(new THREE.AmbientLight(0xffffff, 2));
-        camera.position.z = 5;
+
+        // إضاءة محيطة قوية جداً عشان تظهر الألوان
+        scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+        
+        // إضاءة موجهة من الأمام
+        const light = new THREE.DirectionalLight(0xffffff, 2);
+        light.position.set(2, 2, 5);
+        scene.add(light);
 
         const loader = new THREE.GLTFLoader();
-        
-        // قائمة بكل المسارات المحتملة للملف اللي أنت رفعته
-        const paths = [
-            'aang.glb', 
-            './aang.glb', 
-            '../aang.glb',
-            '/Avatar/aang.glb',
-            './Avatar/aang.glb'
-        ];
-
-        function tryPaths(index) {
-            if (index >= paths.length) {
-                document.getElementById('msg').innerText = "فشل الربط.. جرب رفع الملف في الـ Main مباشرة بجانب index.html";
-                return;
-            }
+        // استخدام نفس المسار اللي اشتغل معاك
+        loader.load('./aang.glb', (gltf) => {
+            const model = gltf.scene;
+            scene.add(model);
+            model.position.y = -1.5;
+            model.scale.set(3, 3, 3);
             
-            loader.load(paths[index], (gltf) => {
-                scene.add(gltf.scene);
-                document.getElementById('msg').style.display = 'none';
-                animate();
-            }, undefined, () => tryPaths(index + 1));
-        }
+            function animate() {
+                requestAnimationFrame(animate);
+                model.rotation.y += 0.01;
+                renderer.render(scene, camera);
+            }
+            animate();
+        });
 
-        tryPaths(0);
-        function animate() { requestAnimationFrame(animate); scene.rotation.y += 0.01; renderer.render(scene, camera); }
+        camera.position.z = 5;
     </script>
 </body>
 </html>
