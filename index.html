@@ -2,124 +2,125 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>Avatar Superman Edition</title>
+    <title>Avatar Real World Engine</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
     <style>
-        body { margin: 0; background: #87CEEB; overflow: hidden; touch-action: none; }
-        #ui-layer { position: absolute; bottom: 40px; width: 100%; display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box; pointer-events: none; }
-        .joystick-container { width: 130px; height: 130px; pointer-events: auto; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); backdrop-filter: blur(5px); }
-        #instructions { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #004466; background: rgba(255,255,255,0.6); padding: 5px 20px; border-radius: 20px; font-family: sans-serif; pointer-events: none; }
+        body { margin: 0; background: #87CEEB; overflow: hidden; touch-action: none; font-family: sans-serif; }
+        #ui-layer { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 30px; box-sizing: border-box; pointer-events: none; }
+        .joy-con { width: 120px; height: 120px; pointer-events: auto; background: rgba(255,255,255,0.1); border-radius: 50%; backdrop-filter: blur(5px); border: 1px solid #fff; }
+        #land-btn { position: absolute; bottom: 170px; right: 50px; width: 80px; height: 80px; border-radius: 50%; background: rgba(255, 0, 0, 0.6); color: white; border: 2px solid #fff; pointer-events: auto; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
     </style>
 </head>
 <body>
-    <div id="instructions">المس الشاشة للتدوير | اليمين للمشي | الشمال للطيران</div>
+    <div id="land-btn">هبوط</div>
     <div id="ui-layer">
-        <div id="joy-fly" class="joystick-container"></div>
-        <div id="joy-walk" class="joystick-container"></div>
-    </div>
+        <div id="joy-fly" class="joy-con"></div> <div id="joy-walk" class="joy-con"></div> </div>
 
     <script>
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); // نهار دائم
-        scene.fog = new THREE.Fog(0x87CEEB, 100, 1500);
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 200, 2000);
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 4000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.shadowMap.enabled = true; // تفعيل الظلال
         document.body.appendChild(renderer.domElement);
 
-        // إضاءة شمس قوية تظهر تفاصيل المجسم
-        const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-        scene.add(ambient);
-        const sun = new THREE.DirectionalLight(0xffffff, 1.2);
-        sun.position.set(50, 200, 50);
+        // شمس ساطعة وظلال
+        const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+        sun.position.set(100, 500, 100);
+        sun.castShadow = true;
+        sun.shadow.mapSize.width = 2048;
+        sun.shadow.mapSize.height = 2048;
         scene.add(sun);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
-        // بناء المدينة (المباني صلبة)
+        // أرضية أسفلت واقعية
+        const texLoader = new THREE.TextureLoader();
+        const asphaltTex = texLoader.load('https://threejs.org/examples/textures/terrain/grasslight-big.jpg'); // يمكن استبدالها بـ Asphalt URL
+        const floor = new THREE.Mesh(
+            new THREE.PlaneGeometry(3000, 3000),
+            new THREE.MeshPhongMaterial({ color: 0x333333, shininess: 10 })
+        );
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        // مدينة واقعية (مباني بتكستشر)
         const buildings = [];
-        for(let i=0; i<300; i++) {
-            const h = Math.random() * 70 + 20;
-            const bGeo = new THREE.BoxGeometry(15, h, 15);
-            const bMat = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
-            const b = new THREE.Mesh(bGeo, bMat);
-            b.position.set(Math.random()*1000-500, h/2, Math.random()*1000-500);
+        const bTex = texLoader.load('https://threejs.org/examples/textures/floors/FloorsCheckerboard_S_Diffuse.jpg');
+        for(let i=0; i<250; i++) {
+            const h = Math.random() * 80 + 20;
+            const b = new THREE.Mesh(
+                new THREE.BoxGeometry(20, h, 20),
+                new THREE.MeshStandardMaterial({ map: bTex })
+            );
+            b.position.set(Math.random()*1200-600, h/2, Math.random()*1200-600);
+            b.castShadow = true;
+            b.receiveShadow = true;
             scene.add(b);
             buildings.push(b);
         }
 
-        // الأرضية الصلبة
-        const floor = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.MeshPhongMaterial({ color: 0x666666 }));
-        floor.rotation.x = -Math.PI / 2;
-        scene.add(floor);
-
-        // تحميل الأفاتار
-        let avatar, mixer;
-        const loader = new THREE.GLTFLoader();
-        loader.load('./aang.glb', (gltf) => {
+        // الأفاتار
+        let avatar, isLanding = false;
+        new THREE.GLTFLoader().load('./aang.glb', (gltf) => {
             avatar = gltf.scene;
-            avatar.scale.set(1.5, 1.5, 1.5);
+            avatar.traverse(n => { if(n.isMesh) n.castShadow = true; });
             scene.add(avatar);
-            
-            // الكاميرا تتبع الأفاتار (منظور الشخص الثالث)
-            const camGroup = new THREE.Group();
-            avatar.add(camGroup);
-            camGroup.add(camera);
-            camera.position.set(0, 7, -15);
-            camera.lookAt(new THREE.Vector3(0, 4, 0));
+            avatar.add(camera);
+            camera.position.set(0, 10, -25);
+            camera.lookAt(0, 5, 0);
         });
 
-        // نظام دوران الكاميرا باللمس (Touch Rotation)
-        let isTouching = false, prevTouchX = 0, prevTouchY = 0;
-        document.addEventListener('touchstart', (e) => { isTouching = true; prevTouchX = e.touches[0].pageX; prevTouchY = e.touches[0].pageY; });
-        document.addEventListener('touchend', () => { isTouching = false; });
+        // تحكم اللمس (للدوران فقط)
+        let touchX = 0;
         document.addEventListener('touchmove', (e) => {
-            if(!isTouching || !avatar) return;
-            const deltaX = e.touches[0].pageX - prevTouchX;
-            const deltaY = e.touches[0].pageY - prevTouchY;
-            avatar.rotation.y -= deltaX * 0.01; // تدوير الشخصية يمين ويسار
-            prevTouchX = e.touches[0].pageX;
-            prevTouchY = e.touches[0].pageY;
-        });
+            if(e.touches.length === 1 && avatar) {
+                const deltaX = e.touches[0].pageX - touchX;
+                avatar.rotation.y -= deltaX * 0.005;
+                touchX = e.touches[0].pageX;
+            }
+        }, {passive: false});
+        document.addEventListener('touchstart', (e) => { touchX = e.touches[0].pageX; });
 
-        // أزرار التحكم (Joysticks)
-        let walkData = {x:0, y:0}, flyData = {y:0};
-        nipplejs.create({ zone: document.getElementById('joy-walk'), mode: 'static', position: {left: '50%', top: '50%'}, color: 'white' })
-            .on('move', (e, d) => { walkData = d.vector; });
-        nipplejs.create({ zone: document.getElementById('joy-fly'), mode: 'static', position: {left: '50%', top: '50%'}, color: 'cyan' })
-            .on('move', (e, d) => { flyData.y = d.vector.y; });
+        // جوي ستيك
+        let walk = {x:0, y:0}, fly = {y:0};
+        nipplejs.create({zone: document.getElementById('joy-walk'), mode:'static', position:{left:'50%', top:'50%'}}).on('move',(e,d)=>{walk=d.vector;});
+        nipplejs.create({zone: document.getElementById('joy-fly'), mode:'static', position:{left:'50%', top:'50%'}}).on('move',(e,d)=>{fly.y=d.vector.y;});
+        
+        document.getElementById('land-btn').onclick = () => { isLanding = true; };
 
         function animate() {
             requestAnimationFrame(animate);
-            if (avatar) {
+            if(avatar) {
                 let prevPos = avatar.position.clone();
+                
+                // مشي (بدون دوران من الزرار)
+                avatar.translateZ(walk.y * 1.5);
+                avatar.translateX(walk.x * 1.5);
 
-                // 1. حركة المشي الواقعية
-                avatar.translateZ(walkData.y * 1.2);
-                avatar.translateX(walkData.x * 0.5);
-
-                // 2. حركة الطيران والهبوط
-                avatar.position.y += flyData.y * 1.0;
-
-                // 3. ميلان الجسم (Superman Lean)
-                // لو طاير لفوق يميل لقدام، لو واقف يرجع عدل
-                if (Math.abs(flyData.y) > 0.1 || Math.abs(walkData.y) > 0.1) {
-                    avatar.children[0].rotation.x = THREE.MathUtils.lerp(avatar.children[0].rotation.x, -Math.PI/3, 0.1);
+                // طيران وهبوط
+                if(isLanding) {
+                    avatar.position.y -= 1.5;
+                    avatar.children[0].rotation.x = THREE.MathUtils.lerp(avatar.children[0].rotation.x, Math.PI/4, 0.1);
+                    if(avatar.position.y <= 0.5) { isLanding = false; avatar.position.y = 0.5; }
                 } else {
-                    avatar.children[0].rotation.x = THREE.MathUtils.lerp(avatar.children[0].rotation.x, 0, 0.1);
+                    avatar.position.y += fly.y * 1.2;
+                    // ميل سوبر مان
+                    let tilt = (Math.abs(fly.y) > 0.1 || Math.abs(walk.y) > 0.1) ? -Math.PI/3 : 0;
+                    avatar.children[0].rotation.x = THREE.MathUtils.lerp(avatar.children[0].rotation.x, tilt, 0.1);
                 }
 
-                // 4. الفيزياء ومنع اختراق الأرض والمباني
-                if (avatar.position.y < 0.1) avatar.position.y = 0.1; // صلب كالأرض
-
-                let avatarBox = new THREE.Box3().setFromObject(avatar);
-                for(let b of buildings) {
-                    if(avatarBox.intersectsBox(new THREE.Box3().setFromObject(b))) {
-                        avatar.position.copy(prevPos); // منع اختراق المباني
-                    }
-                }
+                // تصادم صلب
+                let aBox = new THREE.Box3().setFromObject(avatar);
+                buildings.forEach(b => {
+                    if(aBox.intersectsBox(new THREE.Box3().setFromObject(b))) avatar.position.copy(prevPos);
+                });
+                if(avatar.position.y < 0.5) avatar.position.y = 0.5;
             }
             renderer.render(scene, camera);
         }
