@@ -1,140 +1,68 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Avatar: Elemental Master</title>
+    <title>Aang 3D - Pro Environment</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
-    <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        #ui-layer { position: absolute; top: 20px; left: 20px; color: white; z-index: 10; pointer-events: none; }
-        .stat { background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; margin-bottom: 5px; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2); }
-        #joystick { position: absolute; bottom: 50px; left: 50px; width: 120px; height: 120px; }
-        #element-indicator { position: absolute; top: 20px; right: 20px; color: #00d4ff; font-weight: bold; font-size: 1.2rem; text-shadow: 0 0 10px #00d4ff; }
-    </style>
+    <style>body { margin: 0; background: #222; overflow: hidden; }</style>
 </head>
 <body>
-    <div id="ui-layer">
-        <div class="stat">العنصر النشط: <span id="current-el">الهواء</span></div>
-        <div class="stat">الارتفاع: <span id="alt">0</span> م</div>
-    </div>
-    <div id="element-indicator">AVATAR STATE: ACTIVE</div>
-    <div id="joystick"></div>
-
     <script>
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0x000000, 0.002); // ضباب سينمائي للمدينة
+        scene.fog = new THREE.FogExp2(0xaaaaaa, 0.005); // ضباب رمادي بيدي عمق
         
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 5000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.outputEncoding = THREE.sRGBEncoding;
         document.body.appendChild(renderer.domElement);
 
-        // إضاءة محيطة خافتة لتبرز تأثيرات العناصر
-        scene.add(new THREE.AmbientLight(0x404040, 0.5));
-        const pointLight = new THREE.PointLight(0xffaa00, 0, 50); // ضوء النار التفاعلي
-        scene.add(pointLight);
-
-        // 1. بناء المدينة مع "أعمدة النيون"
+        // إضاءة خافتة لتناسب جو المدينة (Daylight خفيف)
+        scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+        
+        // بناء المدينة السينمائية (المدينة والتحكم شغالين)
         const cityGroup = new THREE.Group();
-        const floorGeo = new THREE.PlaneGeometry(5000, 5000);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8 });
+        const floorGeo = new THREE.PlaneGeometry(2000, 2000);
+        const floorMat = new THREE.MeshPhongMaterial({ color: 0x1a1a1a });
         const floor = new THREE.Mesh(floorGeo, floorMat);
         floor.rotation.x = -Math.PI / 2;
-        scene.add(floor);
+        cityGroup.add(floor);
 
         for(let i=0; i<600; i++) {
             const h = Math.random() * 60 + 10;
             const bGeo = new THREE.BoxGeometry(10, h, 10);
-            const isNeon = Math.random() > 0.8;
-            const bMat = new THREE.MeshStandardMaterial({ 
-                color: isNeon ? 0x00d4ff : 0x222222,
-                emissive: isNeon ? 0x00d4ff : 0x000000,
-                emissiveIntensity: isNeon ? 1 : 0
-            });
+            
+            // جعل 30% من المباني عشوائياً تنور "نيون"
+            let matType = (Math.random() < 0.3) ? 'MeshStandardMaterial' : 'MeshBasicMaterial';
+            let bColor = (matType === 'MeshStandardMaterial') ? 0x00d4ff : 0x222222;
+            let bMat = new THREE[matType]({ color: bColor, emissive: bColor, emissiveIntensity: (matType === 'MeshStandardMaterial')? 1.5 : 0 });
+            
             const building = new THREE.Mesh(bGeo, bMat);
-            building.position.set(Math.random()*1600-800, h/2, Math.random()*1600-800);
+            building.position.set(Math.random()*1000-500, h/2, Math.random()*1000-500);
             cityGroup.add(building);
         }
         scene.add(cityGroup);
 
-        // 2. نظام جزيئات العناصر (Particles)
-        const particleCount = 100;
-        const pGeo = new THREE.BufferGeometry();
-        const pPos = new Float32Array(particleCount * 3);
-        pGeo.setAttribute('position', new THREE.BufferAttribute(pPos, 3));
-        const pMat = new THREE.PointsMaterial({ size: 0.5, transparent: true, blending: THREE.AdditiveBlending });
-        const particles = new THREE.Points(pGeo, pMat);
-        scene.add(particles);
-
-        // 3. تحميل الأفاتار
+        // تحميل الأفاتار (المجسم ظهر لايف)
         let avatar;
         const loader = new THREE.GLTFLoader();
         loader.load('./aang.glb', (gltf) => {
             avatar = gltf.scene;
-            avatar.scale.set(1.5, 1.5, 1.5);
+            avatar.scale.set(1, 1, 1);
             scene.add(avatar);
+            
+            // الكاميرا مربوطة بضهر الأفاتار (Third Person Camera)
             avatar.add(camera);
-            camera.position.set(0, 8, -15);
-            camera.lookAt(0, 4, 0);
-        });
-
-        // 4. التحكم والجوي ستيك
-        let moveData = { x: 0, y: 0 };
-        nipplejs.create({ zone: document.getElementById('joystick'), mode: 'static', position: {left: '70px', bottom: '70px'}, color: 'cyan' })
-        .on('move', (e, d) => { moveData = { x: d.vector.x, y: d.vector.y }; });
-
-        // 5. محرك الحركة والعناصر
-        function updateElements() {
-            if (!avatar) return;
-
-            // كشاف اللهب (Firebending) - ضوء يتحرك مع الأفاتار
-            pointLight.position.copy(avatar.position);
-            pointLight.position.y += 2;
-
-            // نظام الجزيئات تتبع الأفاتار (الهواء)
-            const positions = particles.geometry.attributes.position.array;
-            for(let i=0; i<particleCount; i++) {
-                positions[i*3] = avatar.position.x + (Math.random()-0.5)*5;
-                positions[i*3+1] = avatar.position.y + (Math.random()-0.5)*5;
-                positions[i*3+2] = avatar.position.z + (Math.random()-0.5)*5;
+            camera.position.set(0, 5, -10);
+            camera.lookAt(0, 2, 0);
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                avatar.rotation.y += 0.01;
+                renderer.render(scene, camera);
             }
-            particles.geometry.attributes.position.needsUpdate = true;
-
-            // الطيران والجاذبية (Airbending)
-            if (moveData.y > 0.8) {
-                avatar.position.y += 0.4; // طيران
-                pMat.color.set(0xffffff); // هالة بيضاء
-                pointLight.intensity = 0;
-                document.getElementById('current-el').innerText = "الهواء";
-            } else if (avatar.position.y > 0.1) {
-                avatar.position.y -= 0.15; // جاذبية (Earthbending)
-                pMat.color.set(0x8b4513); // غبار بني
-                document.getElementById('current-el').innerText = "الأرض";
-            }
-
-            // حركة المشي
-            avatar.translateZ(moveData.y * 0.8);
-            avatar.rotation.y -= moveData.x * 0.06;
-
-            // زووم الكاميرا السينمائي
-            camera.position.z = -15 - (avatar.position.y * 0.5); // تبعد الكاميرا كل ما طار
-            document.getElementById('alt').innerText = Math.floor(avatar.position.y);
-        }
-
-        function animate() {
-            requestAnimationFrame(animate);
-            updateElements();
-            renderer.render(scene, camera);
-        }
-        animate();
-
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+            animate();
         });
     </script>
 </body>
