@@ -8,13 +8,13 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #050505; }
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-family: sans-serif; text-align: center; z-index: 10; }
         .ui-overlay { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
-        .btn { width: 60px; height: 60px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; backdrop-filter: blur(5px); cursor: pointer; font-size: 20px; }
-        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-family: sans-serif; text-align: center; }
+        .btn { width: 60px; height: 60px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 20px; backdrop-filter: blur(5px); }
     </style>
 </head>
 <body>
-    <div id="loading">جاري تحميل المجسم...<br><small>قد يستغرق لحظات بسبب حجم الملف</small></div>
+    <div id="loading">جاري تحميل الأفاتار...<br><small>حجم الملف 3 ميجا، انتظر لحظة</small></div>
     <div class="ui-overlay">
         <button class="btn" onclick="rotate(0.5)">◀</button>
         <button class="btn" onclick="rotate(-0.5)">▶</button>
@@ -25,26 +25,30 @@
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x050505);
         document.body.appendChild(renderer.domElement);
 
         scene.add(new THREE.AmbientLight(0xffffff, 2));
         const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(1, 1, 1);
+        light.position.set(5, 5, 5);
         scene.add(light);
 
         let model;
         const loader = new THREE.GLTFLoader();
         
-        // هنا التعديل: خليت الكود يقرأ الملف اللي أنت رفعته باسمه الطويل
-        loader.load('./model_1774875797409.glb', (gltf) => {
+        // استخدام المسار المباشر للملف اللي أنت رفعته
+        const modelPath = 'model_1774875797409.glb';
+
+        loader.load(modelPath, (gltf) => {
             model = gltf.scene;
             scene.add(model);
-            model.position.y = 0;
-            // تكبير المجسم شوية عشان يظهر
+            model.position.y = -1;
             model.scale.set(2, 2, 2); 
             document.getElementById('loading').style.display = 'none';
-        }, undefined, (error) => {
-            document.getElementById('loading').innerText = "تأكد من وجود الملف بالاسم الصحيح في GitHub";
+        }, 
+        (xhr) => { console.log((xhr.loaded / xhr.total * 100) + '% loaded'); },
+        (error) => {
+            document.getElementById('loading').innerHTML = "خطأ في تحميل الملف.<br>تأكد أن الملف بنفس الاسم بجانب index.html";
         });
 
         camera.position.z = 5;
