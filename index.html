@@ -2,44 +2,108 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Aang 3D Final</title>
+    <title>Avatar World - Professional</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <style>body { margin: 0; background: #000; overflow: hidden; }</style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
+        #joystick { position: absolute; bottom: 50px; left: 50px; width: 120px; height: 120px; z-index: 10; }
+        #instructions { position: absolute; top: 10px; left: 10px; color: white; background: rgba(0,0,0,0.5); padding: 10px; border-radius: 5px; pointer-events: none; }
+    </style>
 </head>
 <body>
-    <div id="status" style="color:white; text-align:center; padding-top:20%; font-family:sans-serif;">جاري تحميل الأفاتار...</div>
+    <div id="instructions">المشي: الـ Joystick | الطيران: اسحب للأمام بقوة</div>
+    <div id="joystick"></div>
+
     <script>
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        scene.background = new THREE.Color(0x87ceeb); // سماء زرقاء
+        
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 5000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.outputEncoding = THREE.sRGBEncoding; // عشان الألوان تظهر صح
+        renderer.outputEncoding = THREE.sRGBEncoding;
         document.body.appendChild(renderer.domElement);
 
-        scene.add(new THREE.AmbientLight(0xffffff, 2)); // إضاءة قوية
-        camera.position.z = 5;
+        // إضاءة الشمس والبيئة
+        scene.add(new THREE.AmbientLight(0xffffff, 1));
+        const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+        sun.position.set(100, 200, 100);
+        scene.add(sun);
 
+        // 1. بناء المدينة (أرضية ومباني هندسية سريعة)
+        const cityGroup = new THREE.Group();
+        const floorGeo = new THREE.PlaneGeometry(2000, 2000);
+        const floorMat = new THREE.MeshPhongMaterial({ color: 0x333333 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        cityGroup.add(floor);
+
+        // إنشاء مباني عشوائية لتشكيل مدينة ضخمة
+        for(let i=0; i<500; i++) {
+            const h = Math.random() * 50 + 10;
+            const bGeo = new THREE.BoxGeometry(10, h, 10);
+            const bMat = new THREE.MeshPhongMaterial({ color: Math.random() * 0xffffff });
+            const building = new THREE.Mesh(bGeo, bMat);
+            building.position.set(Math.random()*1000-500, h/2, Math.random()*1000-500);
+            cityGroup.add(building);
+        }
+        scene.add(cityGroup);
+
+        // 2. تحميل الأفاتار (Aang)
+        let avatar;
         const loader = new THREE.GLTFLoader();
-        
-        // إجبار جيت هاب على تحميل أحدث نسخة من الملف
-        const modelPath = './aang.glb?update=' + Date.now();
+        const paths = ['aang.glb', './aang.glb', './Avatar/aang.glb'];
 
-        loader.load(modelPath, (gltf) => {
-            const model = gltf.scene;
-            scene.add(model);
-            model.position.y = -1.5;
-            model.scale.set(3, 3, 3);
-            document.getElementById('status').style.display = 'none';
+        function loadAvatar(index) {
+            if (index >= paths.length) return;
+            loader.load(paths[index], (gltf) => {
+                avatar = gltf.scene;
+                avatar.scale.set(1, 1, 1);
+                scene.add(avatar);
+                // الكاميرا تتبع الأفاتار
+                avatar.add(camera);
+                camera.position.set(0, 5, -10);
+                camera.lookAt(0, 2, 0);
+            }, undefined, () => loadAvatar(index + 1));
+        }
+        loadAvatar(0);
+
+        // 3. نظام التحكم (Joystick)
+        let moveData = { x: 0, y: 0 };
+        const joy = nipplejs.create({ zone: document.getElementById('joystick'), mode: 'static', position: {left: '60px', bottom: '60px'}, color: 'white' });
+        
+        joy.on('move', (evt, data) => {
+            moveData.x = data.vector.x;
+            moveData.y = data.vector.y;
+        });
+        joy.on('end', () => { moveData = { x: 0, y: 0 }; });
+
+        // 4. دالة التحريك (المشي والطيران)
+        function animate() {
+            requestAnimationFrame(animate);
             
-            function animate() {
-                requestAnimationFrame(animate);
-                model.rotation.y += 0.01;
-                renderer.render(scene, camera);
+            if (avatar) {
+                // المشي والدوران
+                avatar.translateZ(moveData.y * 0.5);
+                avatar.rotation.y -= moveData.x * 0.05;
+
+                // الطيران (إذا سحبت الجوي ستيك للأمام بقوة)
+                if (moveData.y > 0.8) {
+                    avatar.position.y += 0.2; 
+                } else if (avatar.position.y > 0) {
+                    avatar.position.y -= 0.05; // جاذبية بسيطة
+                }
             }
-            animate();
-        }, undefined, (err) => {
-            document.getElementById('status').innerText = "تأكد من رفع الملف بجانب index.html باسم aang.glb";
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         });
     </script>
 </body>
