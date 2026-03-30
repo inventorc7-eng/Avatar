@@ -11,35 +11,35 @@
     </style>
 </head>
 <body>
-    <div id="status">جاري التحميل...</div>
+    <div id="status">محاولة أخيرة للتحميل...</div>
     <script>
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-
         scene.add(new THREE.AmbientLight(0xffffff, 3));
         camera.position.z = 5;
 
         const loader = new THREE.GLTFLoader();
-        // جرب يقرأ الملف بكل الطرق الممكنة
-        const models = ['./model_1774875797409.glb', 'model_1774875797409.glb', '../model_1774875797409.glb'];
         
-        function tryLoad(index) {
-            if (index >= models.length) {
-                document.getElementById('status').innerText = "ارفع الملف في الصفحة الرئيسية للمشروع بجانب index.html";
+        // هيجرب يقرأ الملف من المسار الحالي، ومن الفولدر، ومن بره الفولدر
+        const file = 'model_1774875797409.glb';
+        const paths = [file, './' + file, '/Avatar/' + file, '../' + file];
+
+        function loadPath(i) {
+            if (i >= paths.length) {
+                document.getElementById('status').innerText = "جيت هاب مش شايف الملف.. جرب تفتح اللينك في متصفح خفي";
                 return;
             }
-            loader.load(models[index], (gltf) => {
+            loader.load(paths[i], (gltf) => {
                 scene.add(gltf.scene);
                 document.getElementById('status').style.display = 'none';
                 animate();
-            }, undefined, () => tryLoad(index + 1));
+            }, undefined, () => loadPath(i + 1));
         }
 
-        tryLoad(0);
-
+        loadPath(0);
         function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
     </script>
 </body>
