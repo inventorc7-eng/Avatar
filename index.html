@@ -1,35 +1,53 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
 <head>
-    <title>Avatar 3D</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar 3D Connect</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <style>body { margin: 0; background: #000; }</style>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
+        #loader { position: absolute; top: 50%; width: 100%; text-align: center; color: #00d4ff; font-size: 20px; }
+    </style>
 </head>
 <body>
-    <div id="status" style="color:white; text-align:center; margin-top:20%;">جاري التحميل...</div>
+    <div id="loader">⚡ جاري ربط الكود بالمجسم...</div>
+
     <script>
+        // 1. تجهيز المسرح والإضاءة
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-        scene.add(new THREE.AmbientLight(0xffffff, 3));
-        camera.position.z = 5;
+        scene.add(new THREE.AmbientLight(0xffffff, 2));
 
         const loader = new THREE.GLTFLoader();
-        // الرابط المباشر لملفك
-        const url = 'https://raw.githubusercontent.com/inventorc7-eng/Avatar/main/model_1774875797409.glb';
 
-        loader.load(url, (gltf) => {
-            scene.add(gltf.scene);
-            document.getElementById('status').style.display = 'none';
-        }, undefined, (e) => {
-            document.getElementById('status').innerText = "خطأ: جيت هاب لسه مش شايف الملف";
-        });
+        // 2. دالة الربط السحرية (بتحاول تقرأ الملف بأي اسم موجود)
+        const connectFiles = (fileName) => {
+            loader.load('./' + fileName, (gltf) => {
+                scene.add(gltf.scene);
+                gltf.scene.scale.set(3, 3, 3); // تكبير الشخصية
+                document.getElementById('loader').style.display = 'none';
+                animate();
+            }, undefined, (err) => {
+                // لو فشل في الربط بالاسم الأول، يجرب الاسم الثاني تلقائياً
+                if(fileName === 'aang.glb') connectFiles('model_1774875797409.glb');
+                else document.getElementById('loader').innerText = "❌ فشل الربط.. تأكد من رفع ملف الـ .glb بجانب هذا الملف";
+            });
+        };
 
-        function animate() { requestAnimationFrame(animate); scene.rotation.y += 0.01; renderer.render(scene, camera); }
-        animate();
+        // ابدأ عملية الربط
+        connectFiles('aang.glb');
+
+        camera.position.z = 5;
+        function animate() {
+            requestAnimationFrame(animate);
+            scene.rotation.y += 0.01; // دوران الشخصية
+            renderer.render(scene, camera);
+        }
     </script>
 </body>
 </html>
