@@ -1,53 +1,54 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avatar 3D Connect</title>
+    <title>Avatar 3D Final</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: sans-serif; }
-        #loader { position: absolute; top: 50%; width: 100%; text-align: center; color: #00d4ff; font-size: 20px; }
+        body { margin: 0; background: radial-gradient(circle, #222, #000); overflow: hidden; }
+        #loader { position: absolute; top: 50%; width: 100%; text-align: center; color: white; font-family: sans-serif; }
     </style>
 </head>
 <body>
-    <div id="loader">⚡ جاري ربط الكود بالمجسم...</div>
-
+    <div id="loader">جاري العرض الآن...</div>
     <script>
-        // 1. تجهيز المسرح والإضاءة
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
+
+        // إضاءة قوية جداً من كل الاتجاهات
         scene.add(new THREE.AmbientLight(0xffffff, 2));
+        const light = new THREE.DirectionalLight(0xffffff, 2);
+        light.position.set(5, 5, 5);
+        scene.add(light);
 
         const loader = new THREE.GLTFLoader();
-
-        // 2. دالة الربط السحرية (بتحاول تقرأ الملف بأي اسم موجود)
-        const connectFiles = (fileName) => {
-            loader.load('./' + fileName, (gltf) => {
-                scene.add(gltf.scene);
-                gltf.scene.scale.set(3, 3, 3); // تكبير الشخصية
-                document.getElementById('loader').style.display = 'none';
-                animate();
-            }, undefined, (err) => {
-                // لو فشل في الربط بالاسم الأول، يجرب الاسم الثاني تلقائياً
-                if(fileName === 'aang.glb') connectFiles('model_1774875797409.glb');
-                else document.getElementById('loader').innerText = "❌ فشل الربط.. تأكد من رفع ملف الـ .glb بجانب هذا الملف";
-            });
-        };
-
-        // ابدأ عملية الربط
-        connectFiles('aang.glb');
+        // الربط بالاسم الجديد
+        loader.load('./aang.glb', (gltf) => {
+            const model = gltf.scene;
+            scene.add(model);
+            
+            // ضبط مكان الشخصية في نص الشاشة
+            model.position.y = -1;
+            model.scale.set(2.5, 2.5, 2.5); 
+            
+            document.getElementById('loader').style.display = 'none';
+            
+            // دالة الحركة (دوران)
+            function animate() {
+                requestAnimationFrame(animate);
+                model.rotation.y += 0.01;
+                renderer.render(scene, camera);
+            }
+            animate();
+        }, undefined, (error) => {
+            document.getElementById('loader').innerText = "حدث خطأ.. تأكد من اسم الملف aang.glb";
+        });
 
         camera.position.z = 5;
-        function animate() {
-            requestAnimationFrame(animate);
-            scene.rotation.y += 0.01; // دوران الشخصية
-            renderer.render(scene, camera);
-        }
     </script>
 </body>
 </html>
