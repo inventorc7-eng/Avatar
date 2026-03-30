@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
     <title>Avatar 3D</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         body { margin: 0; background: #000; overflow: hidden; }
-        #status { position: absolute; top: 50%; width: 100%; text-align: center; color: #00d4ff; font-family: sans-serif; }
+        #status { position: absolute; top: 50%; width: 100%; text-align: center; color: #fff; font-family: sans-serif; }
     </style>
 </head>
 <body>
-    <div id="status">جاري سحب الأفاتار من السيرفر...</div>
+    <div id="status">جاري التحميل...</div>
     <script>
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
@@ -22,18 +23,24 @@
         camera.position.z = 5;
 
         const loader = new THREE.GLTFLoader();
+        // جرب يقرأ الملف بكل الطرق الممكنة
+        const models = ['./model_1774875797409.glb', 'model_1774875797409.glb', '../model_1774875797409.glb'];
         
-        // الكود ده هيجرب يقرأ الملف مباشرة كأنه رابط محلي
-        loader.load('model_1774875797409.glb', (gltf) => {
-            scene.add(gltf.scene);
-            gltf.scene.scale.set(2, 2, 2);
-            document.getElementById('status').style.display = 'none';
-        }, undefined, (err) => {
-            document.getElementById('status').innerText = "حدث خطأ في المسار، انتظر دقيقة واعمل Refresh";
-        });
+        function tryLoad(index) {
+            if (index >= models.length) {
+                document.getElementById('status').innerText = "ارفع الملف في الصفحة الرئيسية للمشروع بجانب index.html";
+                return;
+            }
+            loader.load(models[index], (gltf) => {
+                scene.add(gltf.scene);
+                document.getElementById('status').style.display = 'none';
+                animate();
+            }, undefined, () => tryLoad(index + 1));
+        }
+
+        tryLoad(0);
 
         function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
-        animate();
     </script>
 </body>
 </html>
