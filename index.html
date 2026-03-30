@@ -2,68 +2,91 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Aang 3D - Pro Environment</title>
+    <title>Avatar Real City - Day Mode</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <style>body { margin: 0; background: #222; overflow: hidden; }</style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
+    <style>
+        body { margin: 0; background: #87CEEB; overflow: hidden; }
+        .controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box; pointer-events: none; }
+        .joy { width: 100px; height: 100px; pointer-events: auto; background: rgba(255,255,255,0.1); border-radius: 50%; }
+    </style>
 </head>
 <body>
+    <div class="controls">
+        <div id="joy-fly" class="joy"></div> <div id="joy-walk" class="joy"></div> </div>
+
     <script>
         const scene = new THREE.Scene();
-        scene.fog = new THREE.FogExp2(0xaaaaaa, 0.005); // ضباب رمادي بيدي عمق
+        scene.background = new THREE.Color(0x87CEEB); // نهار
         
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 5000);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.outputEncoding = THREE.sRGBEncoding;
         document.body.appendChild(renderer.domElement);
 
-        // إضاءة خافتة لتناسب جو المدينة (Daylight خفيف)
-        scene.add(new THREE.AmbientLight(0xffffff, 1.2));
-        
-        // بناء المدينة السينمائية (المدينة والتحكم شغالين)
-        const cityGroup = new THREE.Group();
-        const floorGeo = new THREE.PlaneGeometry(2000, 2000);
-        const floorMat = new THREE.MeshPhongMaterial({ color: 0x1a1a1a });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
-        floor.rotation.x = -Math.PI / 2;
-        cityGroup.add(floor);
+        // إضاءة شمس قوية
+        const light = new THREE.DirectionalLight(0xffffff, 1.2);
+        light.position.set(50, 100, 50);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-        for(let i=0; i<600; i++) {
-            const h = Math.random() * 60 + 10;
-            const bGeo = new THREE.BoxGeometry(10, h, 10);
-            
-            // جعل 30% من المباني عشوائياً تنور "نيون"
-            let matType = (Math.random() < 0.3) ? 'MeshStandardMaterial' : 'MeshBasicMaterial';
-            let bColor = (matType === 'MeshStandardMaterial') ? 0x00d4ff : 0x222222;
-            let bMat = new THREE[matType]({ color: bColor, emissive: bColor, emissiveIntensity: (matType === 'MeshStandardMaterial')? 1.5 : 0 });
-            
-            const building = new THREE.Mesh(bGeo, bMat);
-            building.position.set(Math.random()*1000-500, h/2, Math.random()*1000-500);
-            cityGroup.add(building);
+        // تحميل صورة الواجهة (Texture)
+        const textureLoader = new THREE.TextureLoader();
+        const buildingTex = textureLoader.load('https://threejs.org/examples/textures/floors/FloorsCheckerboard_S_Diffuse.jpg'); // تجربة لسطح واقعي
+        buildingTex.wrapS = buildingTex.wrapT = THREE.RepeatWrapping;
+        buildingTex.repeat.set(1, 4);
+
+        // إنشاء مدينة واقعية مع تصادم
+        const buildings = [];
+        for(let i=0; i<300; i++) {
+            const h = Math.random() * 50 + 15;
+            const geometry = new THREE.BoxGeometry(12, h, 12);
+            const material = new THREE.MeshLambertMaterial({ map: buildingTex });
+            const building = new THREE.Mesh(geometry, material);
+            building.position.set(Math.random()*800-400, h/2, Math.random()*800-400);
+            scene.add(building);
+            buildings.push(building);
         }
-        scene.add(cityGroup);
 
-        // تحميل الأفاتار (المجسم ظهر لايف)
-        let avatar;
-        const loader = new THREE.GLTFLoader();
-        loader.load('./aang.glb', (gltf) => {
+        // الأرضية
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshLambertMaterial({color: 0x555555}));
+        floor.rotation.x = -Math.PI/2;
+        scene.add(floor);
+
+        let avatar, walkData = {x:0, y:0}, flyData = {y:0};
+        new THREE.GLTFLoader().load('./aang.glb', (gltf) => {
             avatar = gltf.scene;
-            avatar.scale.set(1, 1, 1);
             scene.add(avatar);
-            
-            // الكاميرا مربوطة بضهر الأفاتار (Third Person Camera)
             avatar.add(camera);
-            camera.position.set(0, 5, -10);
-            camera.lookAt(0, 2, 0);
-            
-            function animate() {
-                requestAnimationFrame(animate);
-                avatar.rotation.y += 0.01;
-                renderer.render(scene, camera);
-            }
-            animate();
+            camera.position.set(0, 7, -15);
+            camera.lookAt(0, 3, 0);
         });
+
+        // 2 جوي ستيك
+        nipplejs.create({zone: document.getElementById('joy-walk'), mode:'static', position:{right:'50px', bottom:'50px'}}).on('move', (e,d) => { walkData = d.vector; });
+        nipplejs.create({zone: document.getElementById('joy-fly'), mode:'static', position:{left:'50px', bottom:'50px'}}).on('move', (e,d) => { flyData = d.vector; });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(avatar) {
+                let prevPos = avatar.position.clone();
+                avatar.rotation.y -= walkData.x * 0.05;
+                avatar.translateZ(walkData.y * 1.0);
+                avatar.position.y += flyData.y * 0.5;
+
+                // منع الاختراق
+                let avatarBox = new THREE.Box3().setFromObject(avatar);
+                for(let b of buildings) {
+                    if(avatarBox.intersectsBox(new THREE.Box3().setFromObject(b))) {
+                        avatar.position.copy(prevPos);
+                    }
+                }
+                if(avatar.position.y < 0) avatar.position.y = 0;
+            }
+            renderer.render(scene, camera);
+        }
+        animate();
     </script>
 </body>
 </html>
