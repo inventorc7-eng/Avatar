@@ -1,31 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar" dir="rtl">
 <head>
-    <title>Avatar 3D</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avatar Aang 3D | اللعبة الأسطورية</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <style>
+        body { margin: 0; overflow: hidden; background: #0a0a0a; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        /* واجهة المستخدم - تأثير زجاجي */
+        .ui-overlay {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 15px; z-index: 100;
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
+            padding: 15px; border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .btn {
+            width: 50px; height: 50px; border-radius: 12px; border: none;
+            background: rgba(255, 255, 255, 0.2); color: white; cursor: pointer;
+            transition: 0.3s; font-weight: bold;
+        }
+        .btn:active { transform: scale(0.9); background: #fff; color: #000; }
+        #status { position: absolute; top: 20px; width: 100%; text-align: center; color: white; opacity: 0.7; }
+    </style>
 </head>
-<body style="margin: 0; background: #000; overflow: hidden;">
+<body>
+
+    <div id="status">جاري تحميل الأفاتار...</div>
+
+    <div class="ui-overlay">
+        <button class="btn" onclick="rotateModel(0.1)">◀</button>
+        <button class="btn" onclick="resetModel()">🏠</button>
+        <button class="btn" onclick="rotateModel(-0.1)">▶</button>
+    </div>
+
     <script>
+        let model;
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
         document.body.appendChild(renderer.domElement);
 
-        const light = new THREE.AmbientLight(0xffffff, 3); // إضاءة قوية عشان تشوف الشخصية
-        scene.add(light);
+        // إضاءة قوية وشيك
+        const ambientLight = new THREE.AmbientLight(0xffffff, 2);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0xffffff, 1);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
 
+        // تحميل ملف الـ 3D اللي رفعته
         const loader = new THREE.GLTFLoader();
         loader.load('aang.glb', (gltf) => {
-            const model = gltf.scene;
-            model.position.y = -1;
+            model = gltf.scene;
+            model.position.y = -1.2;
+            model.scale.set(1.5, 1.5, 1.5);
             scene.add(model);
-        }, undefined, (error) => { console.error(error); });
+            document.getElementById('status').innerText = "تم التحميل بنجاح";
+        });
 
-        camera.position.z = 5;
-        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
+        camera.position.z = 4;
+
+        // وظائف التحكم
+        function rotateModel(val) { if(model) model.rotation.y += val; }
+        function resetModel() { if(model) { model.rotation.y = 0; model.position.y = -1.2; } }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if(model) model.rotation.y += 0.005; // دوران تلقائي خفيف
+            renderer.render(scene, camera);
+        }
         animate();
+
+        // استجابة لتغيير حجم الشاشة
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
