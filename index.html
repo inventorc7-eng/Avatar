@@ -1,88 +1,125 @@
 <!DOCTYPE html>
-<html>
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <title>Avatar Real City - Day Mode</title>
+    <title>Avatar Superman Edition</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/nipplejs/0.9.0/nipplejs.min.js"></script>
     <style>
-        body { margin: 0; background: #87CEEB; overflow: hidden; }
-        .controls { position: absolute; bottom: 30px; width: 100%; display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box; pointer-events: none; }
-        .joy { width: 100px; height: 100px; pointer-events: auto; background: rgba(255,255,255,0.1); border-radius: 50%; }
+        body { margin: 0; background: #87CEEB; overflow: hidden; touch-action: none; }
+        #ui-layer { position: absolute; bottom: 40px; width: 100%; display: flex; justify-content: space-between; padding: 0 40px; box-sizing: border-box; pointer-events: none; }
+        .joystick-container { width: 130px; height: 130px; pointer-events: auto; background: rgba(255,255,255,0.1); border-radius: 50%; border: 2px solid rgba(255,255,255,0.3); backdrop-filter: blur(5px); }
+        #instructions { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); color: #004466; background: rgba(255,255,255,0.6); padding: 5px 20px; border-radius: 20px; font-family: sans-serif; pointer-events: none; }
     </style>
 </head>
 <body>
-    <div class="controls">
-        <div id="joy-fly" class="joy"></div> <div id="joy-walk" class="joy"></div> </div>
+    <div id="instructions">المس الشاشة للتدوير | اليمين للمشي | الشمال للطيران</div>
+    <div id="ui-layer">
+        <div id="joy-fly" class="joystick-container"></div>
+        <div id="joy-walk" class="joystick-container"></div>
+    </div>
 
     <script>
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB); // نهار
-        
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 2000);
+        scene.background = new THREE.Color(0x87CEEB); // نهار دائم
+        scene.fog = new THREE.Fog(0x87CEEB, 100, 1500);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 3000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.outputEncoding = THREE.sRGBEncoding;
         document.body.appendChild(renderer.domElement);
 
-        // إضاءة شمس قوية
-        const light = new THREE.DirectionalLight(0xffffff, 1.2);
-        light.position.set(50, 100, 50);
-        scene.add(light);
-        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        // إضاءة شمس قوية تظهر تفاصيل المجسم
+        const ambient = new THREE.AmbientLight(0xffffff, 0.8);
+        scene.add(ambient);
+        const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+        sun.position.set(50, 200, 50);
+        scene.add(sun);
 
-        // تحميل صورة الواجهة (Texture)
-        const textureLoader = new THREE.TextureLoader();
-        const buildingTex = textureLoader.load('https://threejs.org/examples/textures/floors/FloorsCheckerboard_S_Diffuse.jpg'); // تجربة لسطح واقعي
-        buildingTex.wrapS = buildingTex.wrapT = THREE.RepeatWrapping;
-        buildingTex.repeat.set(1, 4);
-
-        // إنشاء مدينة واقعية مع تصادم
+        // بناء المدينة (المباني صلبة)
         const buildings = [];
         for(let i=0; i<300; i++) {
-            const h = Math.random() * 50 + 15;
-            const geometry = new THREE.BoxGeometry(12, h, 12);
-            const material = new THREE.MeshLambertMaterial({ map: buildingTex });
-            const building = new THREE.Mesh(geometry, material);
-            building.position.set(Math.random()*800-400, h/2, Math.random()*800-400);
-            scene.add(building);
-            buildings.push(building);
+            const h = Math.random() * 70 + 20;
+            const bGeo = new THREE.BoxGeometry(15, h, 15);
+            const bMat = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
+            const b = new THREE.Mesh(bGeo, bMat);
+            b.position.set(Math.random()*1000-500, h/2, Math.random()*1000-500);
+            scene.add(b);
+            buildings.push(b);
         }
 
-        // الأرضية
-        const floor = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000), new THREE.MeshLambertMaterial({color: 0x555555}));
-        floor.rotation.x = -Math.PI/2;
+        // الأرضية الصلبة
+        const floor = new THREE.Mesh(new THREE.PlaneGeometry(3000, 3000), new THREE.MeshPhongMaterial({ color: 0x666666 }));
+        floor.rotation.x = -Math.PI / 2;
         scene.add(floor);
 
-        let avatar, walkData = {x:0, y:0}, flyData = {y:0};
-        new THREE.GLTFLoader().load('./aang.glb', (gltf) => {
+        // تحميل الأفاتار
+        let avatar, mixer;
+        const loader = new THREE.GLTFLoader();
+        loader.load('./aang.glb', (gltf) => {
             avatar = gltf.scene;
+            avatar.scale.set(1.5, 1.5, 1.5);
             scene.add(avatar);
-            avatar.add(camera);
+            
+            // الكاميرا تتبع الأفاتار (منظور الشخص الثالث)
+            const camGroup = new THREE.Group();
+            avatar.add(camGroup);
+            camGroup.add(camera);
             camera.position.set(0, 7, -15);
-            camera.lookAt(0, 3, 0);
+            camera.lookAt(new THREE.Vector3(0, 4, 0));
         });
 
-        // 2 جوي ستيك
-        nipplejs.create({zone: document.getElementById('joy-walk'), mode:'static', position:{right:'50px', bottom:'50px'}}).on('move', (e,d) => { walkData = d.vector; });
-        nipplejs.create({zone: document.getElementById('joy-fly'), mode:'static', position:{left:'50px', bottom:'50px'}}).on('move', (e,d) => { flyData = d.vector; });
+        // نظام دوران الكاميرا باللمس (Touch Rotation)
+        let isTouching = false, prevTouchX = 0, prevTouchY = 0;
+        document.addEventListener('touchstart', (e) => { isTouching = true; prevTouchX = e.touches[0].pageX; prevTouchY = e.touches[0].pageY; });
+        document.addEventListener('touchend', () => { isTouching = false; });
+        document.addEventListener('touchmove', (e) => {
+            if(!isTouching || !avatar) return;
+            const deltaX = e.touches[0].pageX - prevTouchX;
+            const deltaY = e.touches[0].pageY - prevTouchY;
+            avatar.rotation.y -= deltaX * 0.01; // تدوير الشخصية يمين ويسار
+            prevTouchX = e.touches[0].pageX;
+            prevTouchY = e.touches[0].pageY;
+        });
+
+        // أزرار التحكم (Joysticks)
+        let walkData = {x:0, y:0}, flyData = {y:0};
+        nipplejs.create({ zone: document.getElementById('joy-walk'), mode: 'static', position: {left: '50%', top: '50%'}, color: 'white' })
+            .on('move', (e, d) => { walkData = d.vector; });
+        nipplejs.create({ zone: document.getElementById('joy-fly'), mode: 'static', position: {left: '50%', top: '50%'}, color: 'cyan' })
+            .on('move', (e, d) => { flyData.y = d.vector.y; });
 
         function animate() {
             requestAnimationFrame(animate);
-            if(avatar) {
+            if (avatar) {
                 let prevPos = avatar.position.clone();
-                avatar.rotation.y -= walkData.x * 0.05;
-                avatar.translateZ(walkData.y * 1.0);
-                avatar.position.y += flyData.y * 0.5;
 
-                // منع الاختراق
+                // 1. حركة المشي الواقعية
+                avatar.translateZ(walkData.y * 1.2);
+                avatar.translateX(walkData.x * 0.5);
+
+                // 2. حركة الطيران والهبوط
+                avatar.position.y += flyData.y * 1.0;
+
+                // 3. ميلان الجسم (Superman Lean)
+                // لو طاير لفوق يميل لقدام، لو واقف يرجع عدل
+                if (Math.abs(flyData.y) > 0.1 || Math.abs(walkData.y) > 0.1) {
+                    avatar.children[0].rotation.x = THREE.MathUtils.lerp(avatar.children[0].rotation.x, -Math.PI/3, 0.1);
+                } else {
+                    avatar.children[0].rotation.x = THREE.MathUtils.lerp(avatar.children[0].rotation.x, 0, 0.1);
+                }
+
+                // 4. الفيزياء ومنع اختراق الأرض والمباني
+                if (avatar.position.y < 0.1) avatar.position.y = 0.1; // صلب كالأرض
+
                 let avatarBox = new THREE.Box3().setFromObject(avatar);
                 for(let b of buildings) {
                     if(avatarBox.intersectsBox(new THREE.Box3().setFromObject(b))) {
-                        avatar.position.copy(prevPos);
+                        avatar.position.copy(prevPos); // منع اختراق المباني
                     }
                 }
-                if(avatar.position.y < 0) avatar.position.y = 0;
             }
             renderer.render(scene, camera);
         }
