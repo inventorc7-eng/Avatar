@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avatar Aang 3D</title>
+    <title>Avatar 3D</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
         body { margin: 0; overflow: hidden; background: #050505; }
         .ui-overlay { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
         .btn { width: 60px; height: 60px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: white; backdrop-filter: blur(5px); cursor: pointer; font-size: 20px; }
-        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-family: sans-serif; }
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-family: sans-serif; text-align: center; }
     </style>
 </head>
 <body>
-    <div id="loading">جاري تحضير الأفاتار...</div>
+    <div id="loading">جاري تحميل المجسم...<br><small>قد يستغرق لحظات بسبب حجم الملف</small></div>
     <div class="ui-overlay">
-        <button class="btn" onclick="rotate(0.2)">◀</button>
-        <button class="btn" onclick="rotate(-0.2)">▶</button>
+        <button class="btn" onclick="rotate(0.5)">◀</button>
+        <button class="btn" onclick="rotate(-0.5)">▶</button>
     </div>
 
     <script>
@@ -27,32 +27,29 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        const light1 = new THREE.AmbientLight(0xffffff, 2);
-        scene.add(light1);
-        const light2 = new THREE.DirectionalLight(0xffffff, 1);
-        light2.position.set(1, 1, 1);
-        scene.add(light2);
+        scene.add(new THREE.AmbientLight(0xffffff, 2));
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(1, 1, 1);
+        scene.add(light);
 
         let model;
         const loader = new THREE.GLTFLoader();
         
-        // التعديل هنا: استخدام رابط مباشر للتأكد من التحميل
-        loader.load('./aang.glb', (gltf) => {
+        // هنا التعديل: خليت الكود يقرأ الملف اللي أنت رفعته باسمه الطويل
+        loader.load('./model_1774875797409.glb', (gltf) => {
             model = gltf.scene;
             scene.add(model);
-            model.position.y = -1;
+            model.position.y = 0;
+            // تكبير المجسم شوية عشان يظهر
+            model.scale.set(2, 2, 2); 
             document.getElementById('loading').style.display = 'none';
-        }, 
-        (xhr) => { console.log((xhr.loaded / xhr.total * 100) + '% loaded'); },
-        (error) => { 
-            document.getElementById('loading').innerText = "خطأ في تحميل الملف - تأكد من اسم aang.glb";
-            console.error(error); 
+        }, undefined, (error) => {
+            document.getElementById('loading').innerText = "تأكد من وجود الملف بالاسم الصحيح في GitHub";
         });
 
-        camera.position.z = 3;
+        camera.position.z = 5;
 
         function rotate(val) { if(model) model.rotation.y += val; }
-
         function animate() {
             requestAnimationFrame(animate);
             if(model) model.rotation.y += 0.005;
