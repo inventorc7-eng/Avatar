@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,25 +7,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #050505; }
-        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-family: sans-serif; text-align: center; z-index: 10; }
-        .ui-overlay { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 100; }
-        .btn { width: 60px; height: 60px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 20px; backdrop-filter: blur(5px); }
+        body { margin: 0; overflow: hidden; background: #000; }
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-family: sans-serif; text-align: center; }
     </style>
 </head>
 <body>
-    <div id="loading">جاري تحميل الأفاتار...<br><small>حجم الملف 3 ميجا، انتظر لحظة</small></div>
-    <div class="ui-overlay">
-        <button class="btn" onclick="rotate(0.5)">◀</button>
-        <button class="btn" onclick="rotate(-0.5)">▶</button>
-    </div>
-
+    <div id="loading">ثواني والأفاتار هيظهر...</div>
     <script>
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setClearColor(0x050505);
         document.body.appendChild(renderer.domElement);
 
         scene.add(new THREE.AmbientLight(0xffffff, 2));
@@ -33,39 +25,27 @@
         light.position.set(5, 5, 5);
         scene.add(light);
 
-        let model;
         const loader = new THREE.GLTFLoader();
         
-        // استخدام المسار المباشر للملف اللي أنت رفعته
-        const modelPath = 'model_1774875797409.glb';
+        // ده اللينك المباشر للملف بتاعك على جيت هاب
+        const rawModelUrl = 'https://raw.githubusercontent.com/inventorc7-eng/Avatar/main/model_1774875797409.glb';
 
-        loader.load(modelPath, (gltf) => {
-            model = gltf.scene;
+        loader.load(rawModelUrl, (gltf) => {
+            const model = gltf.scene;
             scene.add(model);
             model.position.y = -1;
-            model.scale.set(2, 2, 2); 
+            model.scale.set(2, 2, 2);
             document.getElementById('loading').style.display = 'none';
-        }, 
-        (xhr) => { console.log((xhr.loaded / xhr.total * 100) + '% loaded'); },
-        (error) => {
-            document.getElementById('loading').innerHTML = "خطأ في تحميل الملف.<br>تأكد أن الملف بنفس الاسم بجانب index.html";
+        }, undefined, (error) => {
+            document.getElementById('loading').innerText = "لسه فيه مشكلة في المسار.. تأكد من اسم الملف";
         });
 
         camera.position.z = 5;
-
-        function rotate(val) { if(model) model.rotation.y += val; }
         function animate() {
             requestAnimationFrame(animate);
-            if(model) model.rotation.y += 0.005;
             renderer.render(scene, camera);
         }
         animate();
-
-        window.onresize = () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        };
     </script>
 </body>
 </html>
