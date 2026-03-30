@@ -1,1 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>3D Avatar</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body style="margin: 0; background: #111; overflow: hidden;">
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
+        const light = new THREE.AmbientLight(0xffffff, 2);
+        scene.add(light);
+        const pointLight = new THREE.PointLight(0xffffff, 1);
+        pointLight.position.set(5, 5, 5);
+        scene.add(pointLight);
+
+        const loader = new THREE.GLTFLoader();
+        loader.load('aang.glb', (gltf) => {
+            const model = gltf.scene;
+            model.position.y = -1;
+            scene.add(model);
+        });
+
+        camera.position.z = 3;
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        animate();
+    </script>
+</body>
+</html>
