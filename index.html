@@ -1,50 +1,36 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Avatar 3D</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #000; }
-        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-family: sans-serif; text-align: center; }
+        body { margin: 0; background: #000; overflow: hidden; }
+        #msg { position: absolute; top: 50%; width: 100%; text-align: center; color: white; font-family: sans-serif; }
     </style>
 </head>
 <body>
-    <div id="loading">ثواني والأفاتار هيظهر...</div>
+    <div id="msg">جاري تحميل الأفاتار...</div>
     <script>
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
         scene.add(new THREE.AmbientLight(0xffffff, 2));
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(5, 5, 5);
-        scene.add(light);
+        camera.position.z = 5;
 
         const loader = new THREE.GLTFLoader();
-        
-        // ده اللينك المباشر للملف بتاعك على جيت هاب
-        const rawModelUrl = 'https://raw.githubusercontent.com/inventorc7-eng/Avatar/main/model_1774875797409.glb';
-
-        loader.load(rawModelUrl, (gltf) => {
-            const model = gltf.scene;
-            scene.add(model);
-            model.position.y = -1;
-            model.scale.set(2, 2, 2);
-            document.getElementById('loading').style.display = 'none';
-        }, undefined, (error) => {
-            document.getElementById('loading').innerText = "لسه فيه مشكلة في المسار.. تأكد من اسم الملف";
+        // جرب يقرأ الملف بالاسم اللي موجود في الصورة عندك حالياً
+        loader.load('model_1774875797409.glb', (gltf) => {
+            scene.add(gltf.scene);
+            document.getElementById('msg').style.display = 'none';
+        }, undefined, (err) => {
+            document.getElementById('msg').innerText = "حدث خطأ.. تأكد من رفع ملف الـ glb";
         });
 
-        camera.position.z = 5;
-        function animate() {
-            requestAnimationFrame(animate);
-            renderer.render(scene, camera);
-        }
+        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
         animate();
     </script>
 </body>
