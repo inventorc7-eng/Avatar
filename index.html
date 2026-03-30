@@ -2,16 +2,16 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Avatar 3D Final</title>
+    <title>Avatar 3D Live</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <style>
-        body { margin: 0; background: radial-gradient(circle, #222, #000); overflow: hidden; }
-        #loader { position: absolute; top: 50%; width: 100%; text-align: center; color: white; font-family: sans-serif; }
+        body { margin: 0; background: #000; overflow: hidden; }
+        #loader { position: absolute; top: 50%; width: 100%; text-align: center; color: #00d4ff; font-family: sans-serif; }
     </style>
 </head>
 <body>
-    <div id="loader">جاري العرض الآن...</div>
+    <div id="loader">⚡ جاري عرض الأفاتار الآن...</div>
     <script>
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -19,25 +19,23 @@
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // إضاءة قوية جداً من كل الاتجاهات
         scene.add(new THREE.AmbientLight(0xffffff, 2));
-        const light = new THREE.DirectionalLight(0xffffff, 2);
+        const light = new THREE.DirectionalLight(0xffffff, 1);
         light.position.set(5, 5, 5);
         scene.add(light);
 
         const loader = new THREE.GLTFLoader();
-        // الربط بالاسم الجديد
-        loader.load('./aang.glb', (gltf) => {
+        
+        // إضافة رقم عشوائي بعد اسم الملف لإجبار المتصفح على التحديث
+        const modelUrl = './aang.glb?v=' + Math.random();
+
+        loader.load(modelUrl, (gltf) => {
             const model = gltf.scene;
             scene.add(model);
-            
-            // ضبط مكان الشخصية في نص الشاشة
             model.position.y = -1;
-            model.scale.set(2.5, 2.5, 2.5); 
-            
+            model.scale.set(3, 3, 3);
             document.getElementById('loader').style.display = 'none';
             
-            // دالة الحركة (دوران)
             function animate() {
                 requestAnimationFrame(animate);
                 model.rotation.y += 0.01;
