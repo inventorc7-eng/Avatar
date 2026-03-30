@@ -2,36 +2,35 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Aang 3D - Live</title>
+    <title>Aang 3D Final</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <style>body { margin: 0; background: #111; overflow: hidden; }</style>
+    <style>body { margin: 0; background: #000; overflow: hidden; }</style>
 </head>
 <body>
+    <div id="status" style="color:white; text-align:center; padding-top:20%; font-family:sans-serif;">جاري تحميل الأفاتار...</div>
     <script>
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        // تفعيل الألوان الحقيقية للمجسم
-        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.outputEncoding = THREE.sRGBEncoding; // عشان الألوان تظهر صح
         document.body.appendChild(renderer.domElement);
 
-        // إضاءة محيطة قوية جداً عشان تظهر الألوان
-        scene.add(new THREE.AmbientLight(0xffffff, 1.5));
-        
-        // إضاءة موجهة من الأمام
-        const light = new THREE.DirectionalLight(0xffffff, 2);
-        light.position.set(2, 2, 5);
-        scene.add(light);
+        scene.add(new THREE.AmbientLight(0xffffff, 2)); // إضاءة قوية
+        camera.position.z = 5;
 
         const loader = new THREE.GLTFLoader();
-        // استخدام نفس المسار اللي اشتغل معاك
-        loader.load('./aang.glb', (gltf) => {
+        
+        // إجبار جيت هاب على تحميل أحدث نسخة من الملف
+        const modelPath = './aang.glb?update=' + Date.now();
+
+        loader.load(modelPath, (gltf) => {
             const model = gltf.scene;
             scene.add(model);
             model.position.y = -1.5;
             model.scale.set(3, 3, 3);
+            document.getElementById('status').style.display = 'none';
             
             function animate() {
                 requestAnimationFrame(animate);
@@ -39,9 +38,9 @@
                 renderer.render(scene, camera);
             }
             animate();
+        }, undefined, (err) => {
+            document.getElementById('status').innerText = "تأكد من رفع الملف بجانب index.html باسم aang.glb";
         });
-
-        camera.position.z = 5;
     </script>
 </body>
 </html>
