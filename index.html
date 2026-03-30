@@ -2,51 +2,48 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Avatar 3D Live</title>
+    <title>Avatar 3D Final</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <style>
-        body { margin: 0; background: #000; overflow: hidden; }
-        #loader { position: absolute; top: 50%; width: 100%; text-align: center; color: #00d4ff; font-family: sans-serif; }
-    </style>
+    <style>body { margin: 0; background: #000; overflow: hidden; }</style>
 </head>
 <body>
-    <div id="loader">⚡ جاري عرض الأفاتار الآن...</div>
+    <div id="msg" style="color:white; text-align:center; padding-top:20%; font-family:sans-serif;">جاري البحث عن الملف...</div>
     <script>
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth/window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
-
         scene.add(new THREE.AmbientLight(0xffffff, 2));
-        const light = new THREE.DirectionalLight(0xffffff, 1);
-        light.position.set(5, 5, 5);
-        scene.add(light);
+        camera.position.z = 5;
 
         const loader = new THREE.GLTFLoader();
         
-        // إضافة رقم عشوائي بعد اسم الملف لإجبار المتصفح على التحديث
-        const modelUrl = './aang.glb?v=' + Math.random();
+        // قائمة بكل المسارات المحتملة للملف اللي أنت رفعته
+        const paths = [
+            'aang.glb', 
+            './aang.glb', 
+            '../aang.glb',
+            '/Avatar/aang.glb',
+            './Avatar/aang.glb'
+        ];
 
-        loader.load(modelUrl, (gltf) => {
-            const model = gltf.scene;
-            scene.add(model);
-            model.position.y = -1;
-            model.scale.set(3, 3, 3);
-            document.getElementById('loader').style.display = 'none';
-            
-            function animate() {
-                requestAnimationFrame(animate);
-                model.rotation.y += 0.01;
-                renderer.render(scene, camera);
+        function tryPaths(index) {
+            if (index >= paths.length) {
+                document.getElementById('msg').innerText = "فشل الربط.. جرب رفع الملف في الـ Main مباشرة بجانب index.html";
+                return;
             }
-            animate();
-        }, undefined, (error) => {
-            document.getElementById('loader').innerText = "حدث خطأ.. تأكد من اسم الملف aang.glb";
-        });
+            
+            loader.load(paths[index], (gltf) => {
+                scene.add(gltf.scene);
+                document.getElementById('msg').style.display = 'none';
+                animate();
+            }, undefined, () => tryPaths(index + 1));
+        }
 
-        camera.position.z = 5;
+        tryPaths(0);
+        function animate() { requestAnimationFrame(animate); scene.rotation.y += 0.01; renderer.render(scene, camera); }
     </script>
 </body>
 </html>
